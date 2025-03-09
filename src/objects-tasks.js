@@ -371,36 +371,122 @@ function group(array, keySelector, valueSelector) {
  *  For more examples see unit tests.
  */
 
+class CssSelector {
+  constructor() {
+    this.props = {};
+  }
+
+  element(value) {
+    this.validateDuplicate('element');
+    this.validateOrder(['element']);
+    this.props.element = value;
+    return this;
+  }
+
+  id(value) {
+    this.validateDuplicate('id');
+    this.validateOrder(['element', 'id']);
+    this.props.id = `#${value}`;
+    return this;
+  }
+
+  class(value) {
+    this.validateOrder(['element', 'id', 'class']);
+    if (!this.props.class) {
+      this.props.class = [];
+    }
+    this.props.class.push(`.${value}`);
+    return this;
+  }
+
+  attr(value) {
+    this.validateOrder(['element', 'id', 'class', 'attr']);
+    if (!this.props.attr) {
+      this.props.attr = [];
+    }
+    this.props.attr.push(`[${value}]`);
+    return this;
+  }
+
+  pseudoClass(value) {
+    this.validateOrder(['element', 'id', 'class', 'attr', 'pseudoClass']);
+    if (!this.props.pseudoClass) {
+      this.props.pseudoClass = [];
+    }
+    this.props.pseudoClass.push(`:${value}`);
+    return this;
+  }
+
+  pseudoElement(value) {
+    this.validateDuplicate('pseudoElement');
+    this.validateOrder([
+      'element',
+      'id',
+      'class',
+      'attr',
+      'pseudoClass',
+      'pseudoElement',
+    ]);
+    this.props.pseudoElement = `::${value}`;
+    return this;
+  }
+
+  stringify() {
+    return Object.values(this.props).flat().join('');
+  }
+
+  validateDuplicate(prop) {
+    if (this.props[prop]) {
+      throw new Error(
+        `Element, id and pseudo-element should not occur more then one time inside the selector`
+      );
+    }
+  }
+
+  validateOrder(allowedProps) {
+    const existingProps = Object.keys(this.props);
+    const lastProp = existingProps[existingProps.length - 1];
+    if (lastProp && !allowedProps.includes(lastProp)) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new CssSelector().element(value);
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new CssSelector().id(value);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new CssSelector().class(value);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new CssSelector().attr(value);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new CssSelector().pseudoClass(value);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new CssSelector().pseudoElement(value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    return {
+      stringify() {
+        return `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+      },
+    };
   },
 };
-
 module.exports = {
   shallowCopy,
   mergeObjects,
